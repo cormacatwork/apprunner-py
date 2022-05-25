@@ -8,6 +8,7 @@ import mysql.connector
 import os
 
 DATABASE_REGION = 'eu-west-1'
+DATABASE_CERT = 'cert/eu-west-1-bundle.pem'
 DATABASE_HOST = os.environ['DATABASE_HOST']
 DATABASE_PORT = os.environ['DATABASE_PORT']
 DATABASE_USER = os.environ['DATABASE_USER']
@@ -19,21 +20,23 @@ PORT = int(os.environ.get('PORT'))
 
 rds = boto3.client('rds')
 
-
-token = rds.generate_db_auth_token(
-    DBHostname=DATABASE_HOST,
-    Port=DATABASE_PORT,
-    DBUsername=DATABASE_USER,
-    Region=DATABASE_REGION
-)
-
-mydb =  mysql.connector.connect(
-    host=DATABASE_HOST,
-    user=DATABASE_USER,
-    passwd=token,
-    port=DATABASE_PORT,
-    database=DATABASE_NAME
-)      
+try:
+    token = rds.generate_db_auth_token(
+        DBHostname=DATABASE_HOST,
+        Port=DATABASE_PORT,
+        DBUsername=DATABASE_USER,
+        Region=DATABASE_REGION
+    )
+    mydb =  mysql.connector.connect(
+        host=DATABASE_HOST,
+        user=DATABASE_USER,
+        passwd=token,
+        port=DATABASE_PORT,
+        database=DATABASE_NAME,
+        ssl_ca=DATABASE_CERT
+    )
+except Exception as e:
+    print('Database connection failed due to {}'.format(e))          
 
 def all_books(request):
     mycursor = mydb.cursor()
